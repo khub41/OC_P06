@@ -44,6 +44,7 @@ print("Size of the repertory after alphanumeric filter : ", len(all_words.unique
 # print(all_words.value_counts().head(40))
 data.description_tok = data.description_tok.apply(udf.delete_words,
                                                   frequent_words=all_words.value_counts().head(40).index)
+#TODO Pas besoin de faire ça : on peut faire avec tf et idf pour pénaliser les tokens fréquents
 
 all_words = udf.get_all_words(data.description_tok)
 print("Size of the repertory after most common words filter : ", len(all_words.unique()))
@@ -54,7 +55,10 @@ data.description_tok = data.description_tok.apply(udf.delete_words,
 all_words = udf.get_all_words(data.description_tok)
 print("Size of the repertory after stop words filter : ", len(all_words.unique()))
 
+# TODO Attention aux stopwords par défaut
+
 # Stemming
+# TODO faire plutot du lemmatization (moins radical)
 stemmer_eng = SnowballStemmer("english")
 
 data.description_tok = data.description_tok.apply(udf.stem_string,
@@ -62,3 +66,5 @@ data.description_tok = data.description_tok.apply(udf.stem_string,
 all_words = udf.get_all_words(data.description_tok)
 print("Size of the repertory after stemming : ", len(all_words.unique()))
 
+# TODO evaluer les catégories
+# TODO faire un transfert learning? VGGNET/RESNET images. BERT : texte
