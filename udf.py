@@ -104,16 +104,46 @@ def train_tsne(data, labels, perplexity=50, show=True, savefig=False):
     tsne = TSNE(init='pca', random_state=41, n_jobs=-1, perplexity=perplexity)
     data_tsne = tsne.fit_transform(data)
     df_data_tsne_labels = pd.DataFrame(data_tsne, columns=['x', 'y']).merge(labels, left_index=True, right_index=True)
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
     if show:
         plt.style.use('seaborn')
         plt.figure(figsize=(8, 8))
         plt.axis('equal')
-        for label in labels.unique():
+        for label, color in zip(labels.unique(), colors):
             group = df_data_tsne_labels[df_data_tsne_labels[labels.name] == label]
-            plt.scatter(group.x, group.y, label=label)
+            plt.scatter(group.x,
+                        group.y,
+                        label=label,
+                        c=color,
+                        s=12)
         plt.legend()
         plt.show=()
         if savefig:
             plt.savefig('plots/{}.png'.format(savefig), bbox_inches='tight', dpi=720)
 
     return data_tsne
+
+def get_most_frequent_per_categ(data, categ, qtty):
+    sub_data = data[data.label_categ_0 == categ]
+    sub_data_all_words = get_all_words(sub_data.description_tok)
+
+    return sub_data_all_words.value_counts().head(qtty)
+
+
+def detect_useless_words(data, qtty):
+    dict_frequent = {}
+    for categ in data.label_categ_0.unique():
+        frequent_words = get_most_frequent_per_categ(data, categ, qtty).index
+        dict_frequent[categ] = frequent_words
+
+    most_frequent_all = np.concatenate(list(dict_frequent.values()))
+    df = pd.DataFrame(index=list(set(most_frequent_all)), columns=data.label_categ_0.unique())
+
+    for frequent_word in list(set(most_frequent_all)):
+        for categ in data.label_categ_0.unique():
+            df.loc[frequent_word, categ] = frequent_word in dict_frequent[categ]
+
+    df['nb_apperances'] = df.apply(lambda x : x.sum(), axis=1)
+
+    return df
+
