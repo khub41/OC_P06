@@ -100,8 +100,8 @@ def reduce_dim_pca(data_scale, n_comp):
     return data_scale_decomp
 
 
-def train_tsne(data, labels, perplexity=50, show=True, savefig=False):
-    tsne = TSNE(init='pca', random_state=41, n_jobs=-1, perplexity=perplexity)
+def train_tsne(data, labels, perplexity=50, learning_rate=200, show=True, savefig=False):
+    tsne = TSNE(init='pca', random_state=41, n_jobs=-1, perplexity=perplexity, learning_rate=learning_rate)
     data_tsne = tsne.fit_transform(data)
     df_data_tsne_labels = pd.DataFrame(data_tsne, columns=['x', 'y']).merge(labels, left_index=True, right_index=True)
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']

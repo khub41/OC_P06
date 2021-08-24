@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score, confusion_matrix
+from sklearn.metrics import f1_score, confusion_matrix, classification_report
 data = pd.read_csv('data/decomp_2308_700comp.csv', index_col=[0])
 
 def train_model_kmeans(data_train, n_clusters):
@@ -26,11 +26,13 @@ def train_model_GB(data_train):
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
-    score = f1_score(y_test, y_pred)
-    matrix_confuse = confusion_matrix(y_test, y_pred)
-    return matrix_confuse
+    # score = f1_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred)
+    print(report)
+    X_test['label_pred'] = y_pred
+    return X_test
 
 
-new_data = train_model_kmeans(data, 7)
+# new_data = train_model_kmeans(data, 7)
 
 confusion_GB = train_model_GB(data)

@@ -151,6 +151,7 @@ sw_nltk_bilel = [
  'its']
 sw_detected = ['in', 'genuine', 'day', 'buy', 'shipping', 'guarantee', 'at', 'cash',
                'delivery', 'with', 'free', 'only']
+# sw_detected = []
 sw = sw_nltk_bilel + sw_detected
 # # Normalizing capital letters:
 #
@@ -257,9 +258,9 @@ udf.scree_plot(data_scale, 1050, savefig=False)
 
 data_scale_decomp = udf.reduce_dim_pca(data_scale, 700)
 
-data_tsne = udf.train_tsne(data_scale_decomp, data.label_categ_0)
+data_tsne = udf.train_tsne(data_scale_decomp, data.label_categ_0, learning_rate=600)
 
-# most_baby = udf.get_most_frequent_per_categ(data, 'Baby Care', 20)
-#
-# df_useless = udf.detect_useless_words(data, 20)
+most_baby = udf.get_most_frequent_per_categ(data, 'Baby Care', 20)
+
+df_useless = udf.detect_useless_words(data, 20)
 
