@@ -29,3 +29,6 @@ def collect_all_features():
 data_img = collect_all_features()
 scaler = StandardScaler()
 data_img_scale = scaler.fit_transform(data_img.drop(columns=['image_id']))
+
+def tuning_kmeans(data):
+    pass
