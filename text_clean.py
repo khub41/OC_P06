@@ -16,7 +16,6 @@ data = pd.read_csv('data/Flipkart/flipkart_com-ecommerce_sample_1050.csv')
 sw_nltk_bilel = [
  "key",
  "feature",
-
  'product',
  'yourselves',
  "should've",
@@ -140,17 +139,15 @@ sw_nltk_bilel = [
  'weren',
  'by',
  'whom',
-
  "wouldn't",
  'when',
  'is',
  'an',
  'don',
  'herself',
-
  'its']
 sw_detected = ['in', 'genuine', 'day', 'buy', 'shipping', 'guarantee', 'at', 'cash',
-               'delivery', 'with', 'free', 'only']
+               'delivery', 'with', 'free', 'only', 'online', 'price', 'replacement', 'com', 'flipkart']
 # sw_detected = []
 sw = sw_nltk_bilel + sw_detected
 # # Normalizing capital letters:
@@ -260,7 +257,7 @@ data_scale_decomp = udf.reduce_dim_pca(data_scale, 700)
 
 data_tsne = udf.train_tsne(data_scale_decomp, data.label_categ_0, learning_rate=600)
 
-most_baby = udf.get_most_frequent_per_categ(data, 'Baby Care', 20)
+# most_baby = udf.get_most_frequent_per_categ(data, 'Baby Care', 20)
 
-df_useless = udf.detect_useless_words(data, 20)
+# df_useless = udf.detect_useless_words(data, 20)
 
