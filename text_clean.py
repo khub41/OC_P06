@@ -4,9 +4,12 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from datetime import date
 
 import udf
 
+PATH_DATA = 'data/'
+DATA_FILE_NAME = 'Flipkart/flipkart_com-ecommerce_sample_1050.csv'
 # We are going to use TFIDF Vectorizer to create the features.
 # This Sklearn object uses a tokenizing function and creates the n_grams
 
@@ -39,8 +42,8 @@ def custom_tokenize(text, mode="lemma"):
 
 
 def main():
-    data = pd.read_csv('data/Flipkart/flipkart_com-ecommerce_sample_1050.csv')
-
+    # data = pd.read_csv('data/Flipkart/flipkart_com-ecommerce_sample_1050.csv')
+    data = pd.read_csv(PATH_DATA + DATA_FILE_NAME)
     # Stop words. Stop words are from nltk standard english stopwords library
     sw_nltk = stopwords.words('english')
     # I chose to keep a few stopwords anyway
@@ -140,8 +143,10 @@ def main():
     # Scaling and reducing dimension with StandardScaler and PCA
     data_scale = udf.scale_data(data_raw)
     udf.scree_plot(data_scale, 1050, savefig=False)
-    data_scale_decomp = udf.reduce_dim_pca(data_scale, 700)
+    n_dim = 700
+    data_scale_decomp = udf.reduce_dim_pca(data_scale, n_dim)
 
+    pd.DataFrame(data_scale_decomp).to_csv(PATH_DATA + f"decomp_{str(date.today()).replace('-', '')}_{n_dim}comp.csv")
     # Visualization with TSNE
     data_tsne = udf.train_tsne(data_scale_decomp, data.label_categ_0, learning_rate=600)
 
