@@ -4,9 +4,11 @@ from sklearn.cluster import KMeans
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, confusion_matrix, classification_report
-path_data = 'data/'
-name_data_file = 'decomp_2308_700comp.csv'
-data = pd.read_csv(path_data + name_data_file, index_col=[0])
+
+PATH_DATA = 'data/'
+DATA_FILE_NAME = 'decomp_20210909_700comp.csv'
+
+data = pd.read_csv(PATH_DATA + DATA_FILE_NAME, index_col=[0])
 
 def train_model_kmeans(data_train, n_clusters):
     data_train_copy = data_train.copy()

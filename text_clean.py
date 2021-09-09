@@ -146,7 +146,10 @@ def main():
     n_dim = 700
     data_scale_decomp = udf.reduce_dim_pca(data_scale, n_dim)
 
-    pd.DataFrame(data_scale_decomp).to_csv(PATH_DATA + f"decomp_{str(date.today()).replace('-', '')}_{n_dim}comp.csv")
+    data_to_save = pd.DataFrame(data_scale_decomp).merge(data.label_categ_0,
+                                                         left_index=True,
+                                                         right_index=True).rename(columns={'label_categ_0': 'label'})
+    pd.DataFrame(data_to_save).to_csv(PATH_DATA + f"decomp_{str(date.today()).replace('-', '')}_{n_dim}comp.csv")
     # Visualization with TSNE
     data_tsne = udf.train_tsne(data_scale_decomp, data.label_categ_0, learning_rate=600)
 
