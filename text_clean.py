@@ -101,23 +101,19 @@ def main():
     sw_nltk_custom = [word for word in sw_nltk if word not in sw_to_keep_anyway]
     # Detected stopwords are words that are at the top of the most frequent words in more than 2 category classifications
     # go at the end of the script or to udf.detect_useless_words
-    sw_detected = ['cash',
-                   'with',
-                   'flipkart',
-                   'delivery',
-                   'at',
-                   'guarantee',
-                   'day',
-                   'replacement',
-                   'in',
-                   'buy',
-                   'com',
-                   'genuine',
-                   'free',
-                   'shipping',
-                   'price',
-                   'online',
-                   'only']
+    sw_detected = ['with',
+     'day',
+     'genuine',
+     'delivery',
+     'cash',
+     'product',
+     'r',
+     'buy',
+     'free',
+     'at',
+     'only',
+     'shipping',
+     'in']
     # sw_detected = []
     sw = sw_nltk_custom + sw_detected
 
@@ -155,7 +151,7 @@ def main():
 
     # Detecting words that are frequent in various categories
     # df_useless = udf.detect_useless_words(data, 20)
-    # detected_useless = list(df_useless[df_useless.nb_apperances >=3].index)
+    # detected_useless = list(df_useless[df_useless.nb_apperances >=4].index)
 
     print("Little example")
     print("let's tokenize and skip stopwords from a sentence")
