@@ -32,13 +32,13 @@ def gen_sift_features(gray_img):
 def show_sift_features(gray_img, color_img, kp):
     """Show the keypoints on the original picture"""
     fig, ax = plt.subplots(1)
-    ax.imshow(cv2.drawKeypoints(gray_img, kp, color_img.copy()))
+    ax.imshow(cv2.drawKeypoints(np.array(gray_img), kp, np.array(color_img.copy())))
     plt.show()
 
 
 def get_descriptors(filename, equalize=True, show_pre_process_review=False):
     """From a filename, gets the list of descriptors"""
-    img = cv2.imread(filename)
+    img = Image.open(filename)
     if equalize:
         dst = equalize_image(img, show=show_pre_process_review)
     else:

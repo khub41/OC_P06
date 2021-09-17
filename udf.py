@@ -167,7 +167,7 @@ def tuning_kmeans(data, range_n_clust, show=True, savefig=False):
     for n_clust in range_n_clust:
 
         start = time.time()
-        model_k_means = KMeans(n_clusters=n_clust)
+        model_k_means = KMeans(n_clusters=n_clust, n_jobs=-1)
         print(f"{model_k_means} start training")
         labels = model_k_means.fit_predict(data)
         slh = silhouette_score(data, labels)
