@@ -3,7 +3,7 @@ import pandas as pd
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from datetime import date
 
 import udf
@@ -41,7 +41,8 @@ def custom_tokenize(text, mode="lemma"):
     return tokens
 
 
-def main():
+def main(vectorizer=None):
+
     # data = pd.read_csv('data/Flipkart/flipkart_com-ecommerce_sample_1050.csv')
     data = pd.read_csv(PATH_DATA + DATA_FILE_NAME)
     # Stop words. Stop words are from nltk standard english stopwords library
@@ -128,10 +129,22 @@ def main():
     all_words = udf.get_all_words(data.description_tok)
 
     # Getting the features
-    tfidf = TfidfVectorizer(tokenizer=custom_tokenize, stop_words=sw, ngram_range=(1, 2))
-    values = tfidf.fit_transform(data.description)
+    if vectorizer is None:
+        vect_model = TfidfVectorizer(tokenizer=custom_tokenize, stop_words=sw, ngram_range=(1, 2))
+        values = vect_model.fit_transform(data.description)
+    elif vectorizer.lower() == 'tfidf':
+        vect_model = TfidfVectorizer(tokenizer=custom_tokenize, stop_words=sw, ngram_range=(1, 2))
+        values = vect_model.fit_transform(data.description)
+    elif vectorizer.lower() == 'count':
+        vect_model = CountVectorizer(tokenizer=custom_tokenize, stop_words=sw, ngram_range=(1, 2))
+        values = vect_model.fit_transform(data.description)
+    else:
+        print(f"Invalid entry for vectorizer param : {vectorizer}, using Tf Idf insted")
+        vect_model = TfidfVectorizer(tokenizer=custom_tokenize, stop_words=sw, ngram_range=(1, 2))
+        values = vect_model.fit_transform(data.description)
+
     dense = values.todense()
-    feature_names = tfidf.get_feature_names()
+    feature_names = vect_model.get_feature_names()
     denselist = dense.tolist()
     data_raw = pd.DataFrame(denselist, columns=feature_names).reset_index()
     data_full = data.merge(data_raw, how='left', right_on='index', left_index=True)
@@ -145,7 +158,7 @@ def main():
     data_to_save = pd.DataFrame(data_scale_decomp).merge(data.label_categ_0,
                                                          left_index=True,
                                                          right_index=True).rename(columns={'label_categ_0': 'label'})
-    pd.DataFrame(data_to_save).to_csv(PATH_DATA + f"decomp_{str(date.today()).replace('-', '')}_{n_dim}comp.csv")
+    pd.DataFrame(data_to_save).to_csv(PATH_DATA + f"count_vect_decomp_{str(date.today()).replace('-', '')}_{n_dim}comp.csv")
     # Visualization with TSNE
     data_tsne = udf.train_tsne(data_scale_decomp, data.label_categ_0, learning_rate=600)
 
@@ -164,7 +177,7 @@ def main():
     print(udf.delete_words(custom_tokenize(sentence, mode="stemm"), sw))
 
 if __name__ == '__main__':
-    main()
+    main(vectorizer="count")
 
 
 # TODO faire un transfert learning? VGGNET/RESNET images. BERT : texte

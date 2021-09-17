@@ -12,6 +12,7 @@ from sklearn.metrics import silhouette_score, davies_bouldin_score, classificati
 import matplotlib.pyplot as plt
 import os
 import time
+import mlflow
 
 
 def short_in_long_rate(row):
@@ -159,24 +160,29 @@ def detect_useless_words(data, qtty):
     return df
 
 
-def tuning_kmeans(data, range_n_clust, show=True, savefig=False):
+def tuning_kmeans(data, range_n_clust, experiment, show=True, savefig=False):
 
     slh_scores = {}
     db_scores = {}
-
+    mlflow.set_experiment(experiment)
     for n_clust in range_n_clust:
-
-        start = time.time()
-        model_k_means = KMeans(n_clusters=n_clust, n_jobs=-1)
-        print(f"{model_k_means} start training")
-        labels = model_k_means.fit_predict(data)
-        slh = silhouette_score(data, labels)
-        db = davies_bouldin_score(data, labels)
-        elapsed = time.time() - start
-        print(f"{model_k_means} trained in {elapsed}s")
-        print(f"Slh score : {slh}\nDB score : {db}")
-        slh_scores[n_clust] = slh
-        db_scores[n_clust] = db
+        with mlflow.start_run(run_name=f"tuning ({n_clust} clusters)"):
+            start = time.time()
+            model_k_means = KMeans(n_clusters=n_clust, n_jobs=-1)
+            print(f"{model_k_means} start training")
+            labels = model_k_means.fit_predict(data)
+            slh = silhouette_score(data, labels)
+            db = davies_bouldin_score(data, labels)
+            elapsed = time.time() - start
+            mlflow.log_param("n_clusters", n_clust)
+            mlflow.log_metric('train time', elapsed)
+            mlflow.log_metric("silh score", slh)
+            mlflow.log_metric("DB score", db)
+            print(f"{model_k_means} trained in {elapsed}s")
+            print(f"Slh score : {slh}\nDB score : {db}")
+            slh_scores[n_clust] = slh
+            db_scores[n_clust] = db
+            mlflow.end_run()
 
     if show:
         fig, ax = plt.subplots(2,1, sharex=True)
@@ -216,7 +222,8 @@ def collect_all_features(path_image):
 def train_model_kmeans(data_train, n_clusters):
     data_train_copy = data_train.copy()
     model = KMeans(n_clusters=n_clusters, init="k-means++")
-    predicted_labels = model.fit_predict(data_train_copy.drop(columns=['label']))
+    predicted_labels = model.fit_predict(data_train_copy)
+    data_train_copy = pd.DataFrame(data_train_copy)
     data_train_copy['predicted_label'] = predicted_labels
 
     return data_train_copy
