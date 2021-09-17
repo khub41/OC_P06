@@ -1,34 +1,22 @@
 import image_clean
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, davies_bouldin_score
+import matplotlib.pyplot as plt
 import os
+
+import udf
 
 PATH_IMAGES = 'data/Flipkart/Images'
 
+# data_img = udf.collect_all_features(PATH_IMAGES)
+# data_img.to_csv("data/descriptors_all_equal.csv")
+data_img = pd.read_csv("data/descriptors_all_equal.csv", index_col=[0])
 
-def collect_all_features():
-    original_dir = os.getcwd()
-    os.chdir(PATH_IMAGES)
+data_img_scale = udf.scale_data(data_img.drop(columns=['image_id']))
+udf.scree_plot(data_img_scale, 128)
+# data_img_scale = udf.reduce_dim_pca(data_img_scale, 80)
 
-    full_features = pd.DataFrame()
-    for file_name in os.listdir():
-        descriptors = image_clean.get_descriptors(file_name)
-
-        file_df = pd.DataFrame(descriptors)
-        try:
-            file_df['image_id'] = pd.Series([file_name] * len(descriptors))
-            full_features = full_features.append(file_df)
-        except TypeError as e:
-            print(e)
-            print(file_name)
-
-    return full_features
+# slh_scores, db_scores = udf.tuning_kmeans(data_img_scale, range(2,100), show=True, savefig="")
 
 
-data_img = collect_all_features()
-scaler = StandardScaler()
-data_img_scale = scaler.fit_transform(data_img.drop(columns=['image_id']))
-
-def tuning_kmeans(data):
-    pass

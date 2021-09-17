@@ -1,10 +1,18 @@
 import pandas as pd
 import nltk
-import matplotlib.pyplot as plt
 import numpy as np
+import image_clean
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, davies_bouldin_score, classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+import os
+import time
+
 
 def short_in_long_rate(row):
     """
@@ -68,6 +76,7 @@ def process_categs(product_category_tree, level=0):
         n_categs = len(product_category_tree)
         print(f"Category tree only has {n_categs} categs, level must be between 0 and {n_categs}")
 
+
 def get_bigrams(tokens):
     return list(nltk.bigrams(tokens))
 
@@ -78,6 +87,7 @@ def scale_data(raw_features):
     data_scale = scaler.fit_transform(raw_features)
 
     return data_scale
+
 
 def scree_plot(data_scale, max_comp, savefig=False):
     pca_scree = PCA(n_components=max_comp)
@@ -123,6 +133,7 @@ def train_tsne(data, labels, perplexity=50, learning_rate=200, show=True, savefi
 
     return data_tsne
 
+
 def get_most_frequent_per_categ(data, categ, qtty):
     sub_data = data[data.label_categ_0 == categ]
     sub_data_all_words = get_all_words(sub_data.description_tok)
@@ -147,3 +158,84 @@ def detect_useless_words(data, qtty):
 
     return df
 
+
+def tuning_kmeans(data, range_n_clust, show=True, savefig=False):
+
+    slh_scores = {}
+    db_scores = {}
+
+    for n_clust in range_n_clust:
+
+        start = time.time()
+        model_k_means = KMeans(n_clusters=n_clust)
+        print(f"{model_k_means} start training")
+        labels = model_k_means.fit_predict(data)
+        slh = silhouette_score(data, labels)
+        db = davies_bouldin_score(data, labels)
+        elapsed = time.time() - start
+        print(f"{model_k_means} trained in {elapsed}s")
+        print(f"Slh score : {slh}\nDB score : {db}")
+        slh_scores[n_clust] = slh
+        db_scores[n_clust] = db
+
+    if show:
+        fig, ax = plt.subplots(2,1, sharex=True)
+
+        ax[0].plot(slh_scores.keys(), slh_scores.values(), color="#8c704d")
+        ax[0].set_ylabel('Silhouette_score')
+        ax[1].plot(db_scores.keys(), db_scores.values(), color="#8c704d")
+        ax[1].set_ylabel('Davies Bouldin Score')
+
+        plt.title("Scores against Nb Cluster")
+        if savefig:
+            plt.savefig('plots/{}.png'.format(savefig), bbox_inches='tight', dpi=720)
+
+        plt.show()
+
+    return slh_scores, db_scores
+
+
+def collect_all_features(path_image):
+    original_dir = os.getcwd()
+    os.chdir(path_image)
+
+    full_features = pd.DataFrame()
+    for file_name in os.listdir():
+        descriptors = image_clean.get_descriptors(file_name, equalize=True, show_pre_process_review=False)
+
+        file_df = pd.DataFrame(descriptors)
+        try:
+            file_df['image_id'] = pd.Series([file_name] * len(descriptors))
+            full_features = full_features.append(file_df)
+        except TypeError as e:
+            print(e)
+            print(file_name)
+    os.chdir(original_dir)
+    return full_features
+
+def train_model_kmeans(data_train, n_clusters):
+    data_train_copy = data_train.copy()
+    model = KMeans(n_clusters=n_clusters, init="k-means++")
+    predicted_labels = model.fit_predict(data_train_copy.drop(columns=['label']))
+    data_train_copy['predicted_label'] = predicted_labels
+
+    return data_train_copy
+
+
+def train_model_GB(data_train):
+    X_train, X_test, y_train, y_test = \
+        train_test_split(data_train.drop(columns=['label']),
+                         data_train.label,
+                         test_size=0.3,
+                         random_state=41)
+    model = GradientBoostingClassifier(random_state=41)
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+    # score = f1_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred)
+    confusion_matx = confusion_matrix(y_test, y_pred)
+    print(report)
+    print(confusion_matx)
+    X_test['label_pred'] = y_pred
+    return X_test
