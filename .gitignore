@@ -116,3 +116,6 @@ dmypy.json
 data/
 .idea/
 /plots/
+
+mlruns
+presentation
