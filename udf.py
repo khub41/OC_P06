@@ -7,12 +7,13 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import silhouette_score, davies_bouldin_score, classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import os
 import time
 import mlflow
+import random
 
 
 def short_in_long_rate(row):
@@ -111,11 +112,15 @@ def reduce_dim_pca(data_scale, n_comp):
     return data_scale_decomp
 
 
-def train_tsne(data, labels, perplexity=50, learning_rate=200, show=True, savefig=False):
+def train_tsne(data, labels, perplexity=30, learning_rate=200, show=True, savefig=False):
     tsne = TSNE(init='pca', random_state=41, n_jobs=-1, perplexity=perplexity, learning_rate=learning_rate)
     data_tsne = tsne.fit_transform(data)
     df_data_tsne_labels = pd.DataFrame(data_tsne, columns=['x', 'y']).merge(labels, left_index=True, right_index=True)
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    # colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    number_of_colors = len(labels.unique())
+
+    colors = ["#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+             for i in range(number_of_colors)]
     if show:
         plt.style.use('seaborn')
         plt.figure(figsize=(8, 8))
@@ -125,14 +130,39 @@ def train_tsne(data, labels, perplexity=50, learning_rate=200, show=True, savefi
             plt.scatter(group.x,
                         group.y,
                         label=label,
-                        c=color,
-                        s=12)
+                        color=color,
+                        s=6)
         plt.legend()
         plt.show=()
         if savefig:
             plt.savefig('plots/{}.png'.format(savefig), bbox_inches='tight', dpi=720)
 
     return data_tsne
+
+def train_dbscan(data, run_name):
+    data_train = data.copy()
+    mlflow.set_experiment('dbscan_descriptors')
+    with mlflow.start_run(run_name=run_name):
+        model = DBSCAN(n_jobs=-1)
+        print(f"{model} start training and predicting")
+        start = time.time()
+        labels = model.fit_predict(data_train)
+        elapsed = time.time() - start
+        print(f"{model} trained in {elapsed}s")
+
+        data_train = pd.DataFrame(data_train)
+        data_train['predicted_label'] = labels
+
+        slh = silhouette_score(data_train, labels)
+        db = davies_bouldin_score(data_train, labels)
+        mlflow.log_metric('train time', elapsed)
+        mlflow.log_metric("silh score", slh)
+        mlflow.log_metric("DB score", db)
+        mlflow.log_metric('n_clusters', len(set(model.labels_)))
+        print(f"Slh score : {slh}\nDB score : {db}")
+
+        mlflow.end_run()
+    return data_train
 
 
 def get_most_frequent_per_categ(data, categ, qtty):
@@ -229,12 +259,12 @@ def train_model_kmeans(data_train, n_clusters):
     return data_train_copy
 
 
-def train_model_GB(data_train):
+def train_model_GB(data_train, seed=41):
     X_train, X_test, y_train, y_test = \
         train_test_split(data_train.drop(columns=['label']),
                          data_train.label,
                          test_size=0.3,
-                         random_state=41)
+                         random_state=seed)
     model = GradientBoostingClassifier(random_state=41)
     model.fit(X_train, y_train)
 
@@ -246,3 +276,35 @@ def train_model_GB(data_train):
     print(confusion_matx)
     X_test['label_pred'] = y_pred
     return X_test
+
+
+def plot_cluster_perf(mlflow_experiment_id, savefig=False):
+    runs = mlflow.search_runs(mlflow_experiment_id)
+    plt.style.use('seaborn')
+    runs = runs[runs.status == 'FINISHED']
+    runs['params.n_clusters'] = runs['params.n_clusters'].astype(int)
+    runs['metrics.silh score'] = runs['metrics.silh score'].astype(float)
+    runs['metrics.DB score'] = runs['metrics.DB score'].astype(float)
+    runs = runs.sort_values('params.n_clusters')
+    fig, ax = plt.subplots(2,1, sharex=True)
+    ax[0].plot(runs["params.n_clusters"], runs['metrics.silh score'])
+    ax[0].set_title('Silhouette Score (A maximiser)')
+    ax[0].set_ylabel('Silhouette Score')
+    ax[1].plot(runs["params.n_clusters"], runs['metrics.DB score'])
+    ax[1].set_title('Davies Bouldin Score (A Minimiser)')
+    ax[1].set_ylabel('DB score')
+
+    if savefig:
+        plt.savefig('plots/{}.png'.format(savefig), bbox_inches='tight', dpi=720)
+
+    plt.show()
+
+
+def get_counts(tokens, vocab=None):
+    if vocab is None:
+        vocab = list(range(30))
+    counts = []
+    for visual_word in vocab:
+        counts.append(tokens.count(visual_word))
+    return pd.Series(counts, index=vocab)
+

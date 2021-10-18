@@ -151,7 +151,7 @@ def main(vectorizer=None):
 
     # Scaling and reducing dimension with StandardScaler and PCA
     data_scale = udf.scale_data(data_raw)
-    udf.scree_plot(data_scale, 1050, savefig=False)
+    udf.scree_plot(data_scale, 1050, savefig='scree_plot')
     n_dim = 700
     data_scale_decomp = udf.reduce_dim_pca(data_scale, n_dim)
 

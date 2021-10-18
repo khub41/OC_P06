@@ -117,7 +117,7 @@ def main():
     print(equalized_kp.__len__())
 
     show_sift_features(img_bw, img, img_bw_kp)
-    show_sift_features(equalized, img, equalized_kp)
+    show_sift_features(equalized, equalized, equalized_kp)
 
 if __name__ == '__main__':
     main()
